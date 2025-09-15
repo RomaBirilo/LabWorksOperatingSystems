@@ -1,0 +1,4 @@
+File report mybin
+Num: 1, Name: roma1, Hours: 12.4, Salary: 49.6
+Num: 2, Name: roma2, Hours: 3.6, Salary: 14.4
+Num: 3, Name: roma3, Hours: 5.8, Salary: 23.2
