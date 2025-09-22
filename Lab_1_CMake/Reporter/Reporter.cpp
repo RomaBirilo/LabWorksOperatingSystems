@@ -1,13 +1,9 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include "employee.h"
 using namespace std;
-struct employee
-{
-    int num;
-    char name[10];
-    double hours;
-};
+
 
 int main(int argc, char* argv[])
 {

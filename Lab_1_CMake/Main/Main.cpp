@@ -4,14 +4,9 @@
 #include <string>
 #include <windows.h>
 #include <fstream>
+#include "employee.h"
 using namespace std;
 
-struct employee
-{
-    int num;
-    char name[10];
-    double hours;
-};
 
 
 

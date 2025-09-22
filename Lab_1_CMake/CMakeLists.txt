@@ -11,7 +11,30 @@ endif()
 
 project ("Lab1_CMake")
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/files_/$<CONFIG>)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/files_/$<CONFIG>)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/$<CONFIG>)
+
+
+# 2. Общая интерфейсная библиотека, дающая include path всем подпроектам
+add_library(common INTERFACE)
+target_include_directories(common INTERFACE ${CMAKE_SOURCE_DIR}/include)
+
 # Включите подпроекты.
 add_subdirectory ("Main")
 add_subdirectory ("Creator")
 add_subdirectory ("Reporter")
+
+include(FetchContent)
+FetchContent_Declare(
+  googletest
+  URL https://github.com/google/googletest/archive/refs/heads/main.zip
+)
+FetchContent_MakeAvailable(googletest)
+
+enable_testing()
+
+
+add_subdirectory ("tests")
+
+
