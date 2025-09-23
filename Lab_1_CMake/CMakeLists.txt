@@ -11,9 +11,11 @@ endif()
 
 project ("Lab1_CMake")
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/files_/$<CONFIG>)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/files_/$<CONFIG>)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/$<CONFIG>)
+if(MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDebugDLL" CACHE STRING "" FORCE)
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+endif()
+
 
 
 # 2. Общая интерфейсная библиотека, дающая include path всем подпроектам
