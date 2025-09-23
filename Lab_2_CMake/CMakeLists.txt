@@ -12,12 +12,26 @@ endif()
 project ("Lab2_CMake")
 
 # Добавьте источник в исполняемый файл этого проекта.
-add_executable (Lab2_CMake "main.cpp" "main.h" "min_max.h" "average.h" )
+add_executable (Lab2_CMake "main.cpp"  "min_max.h" "average.h" )
 
-if (CMAKE_VERSION VERSION_GREATER 3.12)
-  set_property(TARGET Lab2_CMake PROPERTY CXX_STANDARD 20)
+if(MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDebugDLL" CACHE STRING "" FORCE)
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 endif()
+
 
 # TODO: Добавьте тесты и целевые объекты, если это необходимо.
 
+include(FetchContent)
+FetchContent_Declare(
+  googletest
+  URL https://github.com/google/googletest/archive/refs/heads/main.zip
+)
+FetchContent_MakeAvailable(googletest)
 
+enable_testing()
+
+add_executable(mytests tests.cpp)
+target_link_libraries(mytests PRIVATE gtest gtest_main)
+include(GoogleTest)
+gtest_discover_tests(mytests)

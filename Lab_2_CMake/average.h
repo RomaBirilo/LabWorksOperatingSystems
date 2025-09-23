@@ -4,9 +4,14 @@
 #include <vector>
 using namespace std;
 
-void average(vector <int>& array)
+double average(vector <int>& array)
 {
-	int sum = 0;
+	if (array.size()==0)
+	{
+		cout << "This array is empty" << endl;
+		return -1.0;
+	}
+	double sum = 0;
 	for (size_t i = 0; i < array.size(); i++)
 	{
 		sum += array[i];
@@ -14,14 +19,22 @@ void average(vector <int>& array)
 	}
 
 	cout << "Average:" << sum/array.size() << endl;
+	return sum / array.size();
 }
 
 DWORD WINAPI AverageWrapper(LPVOID lpParam)
 {
 	auto vec = reinterpret_cast<std::vector<int>*>(lpParam);
-	if (vec && !vec->empty()) {
-		try { average(*vec); }
-		catch (...) { return 1; }
+	if (vec && !vec->empty()) 
+	{
+		try 
+		{ 
+			average(*vec); 
+		}
+		catch (...) 
+		{ 
+			return 1; 
+		}
 	}
 	return 0;
 }

@@ -1,5 +1,4 @@
 ﻿
-#include "main.h"
 #include "min_max.h"
 #include "average.h"
 #include <iostream>
@@ -19,8 +18,6 @@ int main()
 	{
 		cin>>array[i];
 	}
-
-
 
 	DWORD IDMinMax;
 	HANDLE hMinMax = CreateThread(NULL, 0, MinMaxWrapper, &array, 0, &IDMinMax);
