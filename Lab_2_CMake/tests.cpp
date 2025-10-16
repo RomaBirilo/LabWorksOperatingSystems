@@ -11,7 +11,7 @@ TEST(AverageTest, WorkChekPositiveInput)
 	vector<int> testarray{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
 	EXPECT_EQ(average(testarray),4.5);
-	
+
 }
 
 TEST(AverageTest, WorkChekNegativeInput)
