@@ -36,7 +36,7 @@ FetchContent_MakeAvailable(googletest)
 
 enable_testing()
 
-
 add_subdirectory ("tests")
 
+add_dependencies(Main check)
 
