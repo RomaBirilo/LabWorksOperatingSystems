@@ -3,6 +3,8 @@
 #include <vector>
 #include "ThreadData.h"
 #include "marker.h"
+#include <set>
+#include <stdexcept>
 using namespace std;
 int main()
 {
@@ -40,32 +42,36 @@ int main()
 		hStopEvents.push_back(hStopEvent);
 		indices.push_back(i);
 
-		DWORD ThreadID;
-		HANDLE h = CreateThread(NULL, 0, marker, data, 0, &ThreadID);
-		if (!h) 
+		
+		try
 		{
-			cout << "CreateThread failed for thread " << i << " Error: " << GetLastError() << "\n";
+			DWORD ThreadID;
+			HANDLE h = CreateThread(NULL, 0, marker, data, 0, &ThreadID);
+			if (!h)
+			{
+				cout << "CreateThread failed for thread " << i << " Error: " << GetLastError() << "\n";
+			}
+			else
+			{
+				hThreads[i] = h;
+			}
 		}
-		else 
+		catch (const invalid_argument& e)
 		{
-			hThreads[i] = h;
+			cout << e.what();
+			return 0;
 		}
+		
 	}
 
-	
 	SetEvent(hStartEvent);
 
 	int complete_number=0;
-	
+	set <int> completed;
+
 	while (!indices.empty())
 	{
 		int curCount = hStopEvents.size();
-
-		/*for (size_t i = 0; i < hStopEvents.size(); ++i) {
-			DWORD r = WaitForSingleObject(hStopEvents[i], 0);
-			if (r == WAIT_OBJECT_0) cout << "hStopEvents[" << i << "] is signaled\n";
-			else cout << "hStopEvents[" << i << "] is NOT signaled\n";
-		}*/
 
 		if (WaitForMultipleObjects(curCount, hStopEvents.data(), TRUE, INFINITE) != WAIT_OBJECT_0)
 		{
@@ -87,6 +93,15 @@ int main()
 			cout << "Invalid thread number\n";
 			continue;
 		}
+		if (completed.find(complete_number) == completed.end())
+			completed.insert(complete_number);
+		else
+		{
+			cout << "You must enter the number of a stream that has not yet completed.";
+			continue;
+		}
+			
+
 		int idx = complete_number - 1;
 
 		SetEvent(threadData[idx]->hTerminateEvent);
@@ -135,7 +150,7 @@ int main()
 		
 	}
 	
-	for (int i = 0; i < threads_num; ++i)
+	for (int i = 0; i < threads_num; i++)
 	{
 		if (hThreads[i])
 		{

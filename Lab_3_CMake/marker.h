@@ -1,2 +1,12 @@
+#pragma once
 #include <windows.h>
-DWORD WINAPI marker(LPVOID lpParam);
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+	DWORD WINAPI marker(LPVOID lpParam);
+
+#ifdef __cplusplus
+}
+#endif
