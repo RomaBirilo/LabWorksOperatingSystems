@@ -1,15 +1,17 @@
 #include "ProcessLauncher.h"
+#include <vector>
 #include <windows.h>
+using std::vector;
 
-bool ProcessLauncher(wstring& cmdLine, PROCESS_INFORMATION &pi)
+bool ProcessLauncher(vector<char>& cmdLine, PROCESS_INFORMATION &pi)
 {
-    STARTUPINFOW si;
+    STARTUPINFO si;
     ZeroMemory(&si, sizeof(si));
     si.cb = sizeof(si);
     ZeroMemory(&pi, sizeof(pi));
-    if (CreateProcessW(
+    if (CreateProcessA(
         NULL,
-        &cmdLine[0],
+        cmdLine.data(),
         NULL,
         NULL,
         FALSE,

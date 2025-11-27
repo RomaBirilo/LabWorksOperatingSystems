@@ -1,6 +1,5 @@
 #pragma once
-#include <string>
+#include <vector>
 #include <windows.h>
-using std::wstring;
-
-bool ProcessLauncher(wstring & cmdLine, PROCESS_INFORMATION& pi);
+using std::vector;
+bool ProcessLauncher(vector<char>& cmdLine, PROCESS_INFORMATION& pi);
