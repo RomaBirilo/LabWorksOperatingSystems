@@ -10,7 +10,7 @@ int main(int argc, char* argv[])
 {
 	const int note_size = 20;
 
-	if (argc < 6) {
+	if (argc < 7) {
 		cerr << "Usage: Sender.exe <filename> <readyEventName> <mutexName> <emptySemName> <fullSemName>\n";
 		return 1;
 	}
@@ -20,7 +20,9 @@ int main(int argc, char* argv[])
 	string mutexName = argv[3];
 	string emptySemName = argv[4];
 	string fullSemName = argv[5];
-
+	string notes_count_str = argv[6];
+	int notes_count = stoi(notes_count_str);
+	
 	HANDLE hReadyEvent = OpenEventA(EVENT_MODIFY_STATE, FALSE, eventName.c_str());
 	HANDLE hMutex = OpenMutexA(SYNCHRONIZE, FALSE, mutexName.c_str());
 	HANDLE hEmpty = OpenSemaphoreA(SYNCHRONIZE | SEMAPHORE_MODIFY_STATE, FALSE, emptySemName.c_str());
@@ -33,7 +35,7 @@ int main(int argc, char* argv[])
 
 	SetEvent(hReadyEvent);
 
-	int tail = 0;
+	int tail;
 	bool work = true;
 	char buffer[note_size] = {0};
 	while (work)
@@ -42,7 +44,6 @@ int main(int argc, char* argv[])
 		cout << "1.Send to process Receiver note;" << endl;
 		cout << "2.Finish work"<< endl;
 		int n;
-		cin >> n;
 		if (!(cin >> n)) 
 		{
 			cin.clear();
@@ -59,6 +60,9 @@ int main(int argc, char* argv[])
 			WaitForSingleObject(hMutex, INFINITE);
 
 			fstream fileSend(file_name, ios::in | ios::out | ios::binary);
+			fileSend.seekg(sizeof(int), ios::beg);
+			fileSend.read(reinterpret_cast<char*>(&tail), sizeof(tail));
+			
 			cout << "Input your note(max 20 symbols):";
 			string note;
 			getline(cin, note);
@@ -67,11 +71,13 @@ int main(int argc, char* argv[])
 
 			memset(buffer, 0, note_size);
 			memcpy(buffer, note.c_str(), note.size());
-			fileSend.seekp(tail * note_size, ios::beg);
+			fileSend.seekp(sizeof(int) * 2 + tail * note_size, ios::beg);
 			fileSend.write(buffer, note_size);
-		
-			tail = (tail + 1) % (fileSend.tellp() / note_size);
 
+
+			tail = (tail + 1) % notes_count;
+			fileSend.seekp(sizeof(int), ios::beg);
+			fileSend.write(reinterpret_cast<char*>(&tail), sizeof(tail));
 			fileSend.close();
 
 			ReleaseMutex(hMutex);
