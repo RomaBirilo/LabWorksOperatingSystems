@@ -10,6 +10,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(COMMON_SOURCES
     ProcessLauncher.cpp
     ProcessLauncher.h
+    BufferClass.h
+    BufferClass.cpp
 )
 
 # --- Исполняемый файл Receiver ---
@@ -17,14 +19,14 @@ add_executable(Receiver
     Receiver.cpp          # Твой основной файл Receiver
     ${COMMON_SOURCES}     # Общие исходники
     Receiver.h
-)
+ )
 
 # --- Исполняемый файл Sender ---
 add_executable(Sender
     Sender.cpp            # Твой основной файл Sender
     ${COMMON_SOURCES}     # Общие исходники
     Sender.h
-)
+ )
 
 # Если нужно, можно добавить опции компилятора для Windows
 if(MSVC)

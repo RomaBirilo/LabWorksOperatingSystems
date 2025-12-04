@@ -1,4 +1,5 @@
 #include "Sender.h"
+#include "BufferClass.h"
 #include <iostream>
 #include <windows.h>
 #include <fstream>
@@ -10,7 +11,8 @@ int main(int argc, char* argv[])
 {
 	const int note_size = 20;
 
-	if (argc < 7) {
+	if (argc < 7) 
+	{
 		cerr << "Usage: Sender.exe <filename> <readyEventName> <mutexName> <emptySemName> <fullSemName>\n";
 		return 1;
 	}
@@ -28,16 +30,17 @@ int main(int argc, char* argv[])
 	HANDLE hEmpty = OpenSemaphoreA(SYNCHRONIZE | SEMAPHORE_MODIFY_STATE, FALSE, emptySemName.c_str());
 	HANDLE hFull = OpenSemaphoreA(SYNCHRONIZE | SEMAPHORE_MODIFY_STATE, FALSE, fullSemName.c_str());
 	
-	if (!hReadyEvent || !hMutex || !hEmpty || !hFull) {
+	if (!hReadyEvent || !hMutex || !hEmpty || !hFull) 
+	{
 		cerr << "Failed to open synchronization objects\n";
 		return 1;
 	}
 
 	SetEvent(hReadyEvent);
 
+	BufferClass buffer(file_name, notes_count);
 	int tail;
 	bool work = true;
-	char buffer[note_size] = {0};
 	while (work)
 	{
 		cout << "Choose:" << endl;
@@ -59,26 +62,13 @@ int main(int argc, char* argv[])
 			WaitForSingleObject(hEmpty, INFINITE);
 			WaitForSingleObject(hMutex, INFINITE);
 
-			fstream fileSend(file_name, ios::in | ios::out | ios::binary);
-			fileSend.seekg(sizeof(int), ios::beg);
-			fileSend.read(reinterpret_cast<char*>(&tail), sizeof(tail));
-			
 			cout << "Input your note(max 20 symbols):";
 			string note;
 			getline(cin, note);
 			if (note.size() > note_size) 
 				note = note.substr(0, note_size);
 
-			memset(buffer, 0, note_size);
-			memcpy(buffer, note.c_str(), note.size());
-			fileSend.seekp(sizeof(int) * 2 + tail * note_size, ios::beg);
-			fileSend.write(buffer, note_size);
-
-
-			tail = (tail + 1) % notes_count;
-			fileSend.seekp(sizeof(int), ios::beg);
-			fileSend.write(reinterpret_cast<char*>(&tail), sizeof(tail));
-			fileSend.close();
+			buffer.writeNote(note);
 
 			ReleaseMutex(hMutex);
 			ReleaseSemaphore(hFull, 1, NULL);

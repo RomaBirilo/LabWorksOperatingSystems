@@ -1,11 +1,13 @@
 ﻿
 #include "Receiver.h"
 #include "ProcessLauncher.h"
+#include "BufferClass.h"
 #include <iostream>
 #include <windows.h>
 #include <fstream>
 #include <string>
 #include <vector>
+#include <optional>
 using namespace std;
 
 int main()
@@ -16,33 +18,23 @@ int main()
 	cout << "Input name of your binary file:";
 	string file_name;
 	getline(cin, file_name);
-	if (file_name.empty()) {
+	if (file_name.empty()) 
+	{
 		cerr << "Empty file name\n";
 		return 1;
 	}
 	
-
 	cout << "Input count of notes in your binary file:";
 	int notes_count;
 	cin >> notes_count;
+	BufferClass buffer(file_name, notes_count);
 
-	int head = 0;
-	int tail = 0;
-	ofstream file(file_name, ios::binary);
-	if (!file) {
+	if(!buffer.initialize())
+	{
 		cerr << "Cannot create file\n";
 		return 1;
 	}
-	cin.ignore(INT_MAX,'\n');
-
-	int file_size = notes_count * note_size;
-	file.seekp(file_size + header - 1);
-	char zero = '\0';
-	file.write(&zero, 1);
-	file.seekp(0);
-	file.write(reinterpret_cast<char*>(&head), sizeof(head));
-file.write(reinterpret_cast<char*>(&tail), sizeof(tail));
-	file.close();
+	cin.ignore(INT_MAX, '\n');
 
 	cout << "Input count of processes Sender:";
 	int sender_count;
@@ -106,10 +98,7 @@ file.write(reinterpret_cast<char*>(&tail), sizeof(tail));
 		return 1;
 	}
 
-
-	
 	bool work = true;
-	char buffer[note_size];
 	while (work)
 	{
 		cout << "Choose:" << endl;
@@ -123,31 +112,10 @@ file.write(reinterpret_cast<char*>(&tail), sizeof(tail));
 		{
 			WaitForSingleObject(hFull, INFINITE);
 			WaitForSingleObject(hMutex, INFINITE);
-
-			fstream fileRead(file_name, ios::in | ios::out | ios::binary);
-			if (!fileRead) 
-			{ 
-				cout << "Cannot open file\n"; 
-				ReleaseMutex(hMutex); 
-				ReleaseSemaphore(hFull, 1, NULL); 
-				continue; 
-			}
-			fileRead.seekg(0, ios::beg);
-			fileRead.read(reinterpret_cast<char*>(&head), sizeof(head));
-			
-			fileRead.seekg(sizeof(int) * 2 + head * note_size, ios::beg);
-			fileRead.read(buffer, note_size);
-
-			head = (head + 1) % notes_count;
-
-			fileRead.seekp(0, ios::beg);
-			fileRead.write(reinterpret_cast<char*>(&head), sizeof(head));
-			fileRead.close();
-
-			
-			string note(buffer, note_size);
-			note.resize(note.find('\0'));
-			cout << "Note from binary file:" << note << endl;
+			optional<string> note = buffer.readNote();
+			if (!note.has_value())
+				cout << "Cannot read note from file" << endl;
+			cout << "Note from binary file:" << note.value() << endl;
 			ReleaseMutex(hMutex);
 			ReleaseSemaphore(hEmpty, 1, NULL);
 			
