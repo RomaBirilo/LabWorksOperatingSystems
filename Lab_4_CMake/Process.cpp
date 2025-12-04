@@ -7,7 +7,7 @@ using std::cout;
 using std::to_string;
 using std::vector;
 
-bool ProcessLauncher(vector<char>& cmdLine, PROCESS_INFORMATION &pi)
+bool processLauncher(vector<char>& cmdLine, PROCESS_INFORMATION &pi)
 {
     STARTUPINFO si;
     ZeroMemory(&si, sizeof(si));
@@ -45,5 +45,5 @@ bool launchSenderProcess(const string& command, PROCESS_INFORMATION& pi)
 {
     vector<char> cmdbuf(command.begin(), command.end());
     cmdbuf.push_back('\0');
-    return ProcessLauncher(cmdbuf, pi);
+    return processLauncher(cmdbuf, pi);
 }

@@ -5,6 +5,6 @@
 using std::vector;
 using std::string;
 
-bool ProcessLauncher(vector<char>& cmdLine, PROCESS_INFORMATION& pi);
+bool processLauncher(vector<char>& cmdLine, PROCESS_INFORMATION& pi);
 HANDLE createReadyEvent(const string& baseName, int index);
 bool launchSenderProcess(const string& command, PROCESS_INFORMATION& pi);
