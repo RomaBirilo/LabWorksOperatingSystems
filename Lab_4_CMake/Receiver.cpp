@@ -1,6 +1,5 @@
-﻿
-#include "Receiver.h"
-#include "ProcessLauncher.h"
+﻿#include "Receiver.h"
+#include "Process.h"
 #include "BufferClass.h"
 #include <iostream>
 #include <windows.h>
@@ -70,23 +69,20 @@ int main()
 	
 	for (int i = 0; i < sender_count; i++)
 	{
-		PROCESS_INFORMATION pi;
-		string eventName = file_name + "_ready_" + to_string(i + 1);
-		HANDLE hReadyEvent = CreateEventA(NULL, FALSE, FALSE, eventName.c_str());
+		
+		HANDLE hReadyEvent = createReadyEvent(file_name, i);
 		if (!hReadyEvent) 
-		{ 
-			cout << "CreateEvent failed for " << eventName << "\n"; 
 			return 1;
-		}
 		events[i] = hReadyEvent;
 
-		string comand = "Sender.exe \"" + file_name + "\" \"" + eventName + "\" \"" +
+		string eventName = file_name + "_ready_" + to_string(i + 1);
+		string command = "Sender.exe \"" + file_name + "\" \"" + eventName + "\" \"" +
 			mutexName + "\" \"" + emptySemName + "\" \"" + fullSemName + "\" \"" + to_string(notes_count)+"\"";
-		vector<char> cmdbuf(comand.begin(), comand.end());
-		cmdbuf.push_back('\0');
-		if (!ProcessLauncher(cmdbuf, pi))
+
+		PROCESS_INFORMATION pi;
+		if (!launchSenderProcess(command, pi)) 
 		{
-			cout << "Cannot create process number "<< i+1;
+			cout << "Cannot create process number " << i + 1 << "\n";
 			return 0;
 		}
 		processes[i] = pi;
@@ -118,7 +114,6 @@ int main()
 			cout << "Note from binary file:" << note.value() << endl;
 			ReleaseMutex(hMutex);
 			ReleaseSemaphore(hEmpty, 1, NULL);
-			
 		}
 		else if (n == 2)
 			work = false;

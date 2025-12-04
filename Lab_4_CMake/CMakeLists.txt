@@ -8,8 +8,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Общие файлы
 set(COMMON_SOURCES
-    ProcessLauncher.cpp
-    ProcessLauncher.h
+    "Process.cpp"
+    "Process.h"
     BufferClass.h
     BufferClass.cpp
 )
