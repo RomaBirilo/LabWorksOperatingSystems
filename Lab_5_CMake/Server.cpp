@@ -6,45 +6,32 @@ int main()
 	cout << "Input name of binary file:";
 	string fileName;
 	getline(cin, fileName);
-	ofstream fout(fileName, ios::binary);
-
-	cout << "Input number of students";
+	cout << "Input number of employees:";
 	int employeesNumber;
 	cin >> employeesNumber;
-	for (size_t i = 0; i < employeesNumber; i++)
-	{
-		employee emp;
-
-		cout << "Input information for employee " << i + 1 << ":" << endl;
-		cout << "Employee's id:";
-		cin >> emp.num;
-		cout << "Employee's name:";
-		cin >> emp.name;
-		cout << "Work hours:";
-		cin >> emp.hours;
-
-		fout.write(reinterpret_cast<char*>(&emp), sizeof(emp));
-	}
-	fout.close();
+	WriteFile(fileName, employeesNumber);
+	cout << "Your file:" << endl;
+	ShowFile(fileName, employeesNumber);
 
 	cout << "Input count of processec Client:";
 	int processesCount;
 	cin >> processesCount;
-	vector <PROCESS_INFORMATION> processes;
+
+	vector<EmployeeLock> locks(employeesNumber);
+	InitLocks(employeesNumber, locks);
+	ThreadParams* params = new ThreadParams{&locks, &fileName, employeesNumber};
+	vector <HANDLE> threads;
 
 	try 
 	{
-		processes = LaunchProcesses(processesCount);
+		threads = LaunchThreads(processesCount, params);
 	}
 	catch (const runtime_error& ex)
 	{
 		cout << ex.what();
 	}
 
-
-
-
-
-
-	CloseProcesses(processes);
+	WaitForMultipleObjects(processesCount, threads.data(), TRUE, INFINITE);
+	CloseLocks(locks);
+	CloseThreads(threads);
 }
