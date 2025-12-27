@@ -58,15 +58,21 @@ struct ThreadParams
 	int employeesNumber;
 };
 
-PROCESS_INFORMATION& LaunchProcess();
-HANDLE& LaunchNamedPipe();
+struct ThreadParamsInd
+{
+	ThreadParams* params;
+	string pipeName;
+};
+
+PROCESS_INFORMATION LaunchProcess(char command[]);
+HANDLE LaunchNamedPipe(char pipeName[]);
 void CloseProcess(PROCESS_INFORMATION process);
 void WriteFile(string fileName, int employeesNumber);
 void ShowFile(string fileName, int employeesNumber);
 bool InitLocks(int employeesNumber, vector<EmployeeLock>& locks);
 void CloseLocks(vector<EmployeeLock>& locks);
 DWORD WINAPI ClientThread(LPVOID lpParam);
-vector <HANDLE>& LaunchThreads(int processCount, ThreadParams* params);
+vector <HANDLE> LaunchThreads(int processCount, ThreadParams* params);
 void CloseThreads(vector <HANDLE>& threads);
-employee& Read(EmployeeLock& lock, int index,fstream& fin);
+employee Read(EmployeeLock& lock, int index,fstream& fin);
 void Write(EmployeeLock& lock, int index, employee& emp, fstream& fout);

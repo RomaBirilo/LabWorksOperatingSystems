@@ -25,9 +25,8 @@ istream& operator>>(istream& in, employee& emp)
 	return in;
 }
 
-PROCESS_INFORMATION& LaunchProcess()
+PROCESS_INFORMATION LaunchProcess(char command[])
 {
-	char command[24] = "Client.exe";
 	STARTUPINFO si;
 	ZeroMemory(&si, sizeof(si));
 	PROCESS_INFORMATION pi;
@@ -51,14 +50,14 @@ PROCESS_INFORMATION& LaunchProcess()
 	return pi;
 }
 
-HANDLE& LaunchNamedPipe()
+HANDLE LaunchNamedPipe(char pipeName[])
 {
 	HANDLE hNamedPipe;
 	hNamedPipe = CreateNamedPipe(
-		"\\\\.\\pipe\\MyPipe",
+		pipeName,
 		PIPE_ACCESS_DUPLEX,
 		PIPE_TYPE_MESSAGE | PIPE_WAIT,
-		PIPE_UNLIMITED_INSTANCES,
+		1,
 		0,
 		0,
 		INFINITE,
@@ -129,27 +128,35 @@ void CloseLocks(vector<EmployeeLock>& locks)
 
 DWORD __stdcall ClientThread(LPVOID lpParam)
 {
+	ThreadParamsInd* params = static_cast<ThreadParamsInd*>(lpParam);
+	ThreadParams* p = params->params;
+	string cmd = "Client.exe \"" + params->pipeName + "\"";
+	char pipeName[256];
+	char command[256];
+	strcpy_s(pipeName, sizeof(pipeName), params->pipeName.c_str());
+	strcpy_s(command, sizeof(command), cmd.c_str());
 	PROCESS_INFORMATION pi;
 	HANDLE hNamedPipe;
 	try
 	{
-		pi = LaunchProcess();
-		hNamedPipe = LaunchNamedPipe();
+		hNamedPipe = LaunchNamedPipe(pipeName);
+		pi = LaunchProcess(command);
+		bool ok = ConnectNamedPipe(hNamedPipe, (LPOVERLAPPED)NULL);
+		if (!ok)
+		{
+			DWORD err = GetLastError();
+			CloseHandle(hNamedPipe);
+			throw runtime_error("The connection failed.Win32 error code: " + to_string(err));
+			return 0;
+		}
 	}
 	catch (const runtime_error& ex)
 	{
 		throw runtime_error(ex.what());
 	}
 	
-	if (!ConnectNamedPipe(hNamedPipe, (LPOVERLAPPED)NULL))
-	{
-		DWORD err = GetLastError();
-		CloseHandle(hNamedPipe);
-		throw runtime_error("The connection failed.Win32 error code: " + to_string(err));
-		return 0;
-	}
-
-	ThreadParams* p = static_cast<ThreadParams*>(lpParam);
+	cout << "Client connected successfully!" << endl;
+	
 	vector<EmployeeLock>& locks = *(p->locks);
 	string& fileName = *(p->fileName);
 	int employeesNumber = p->employeesNumber;
@@ -186,18 +193,24 @@ DWORD __stdcall ClientThread(LPVOID lpParam)
 		else if (request.operationType == "END")
 			break;
 	}
+	WaitForSingleObject(pi.hProcess, INFINITE);
 	CloseProcess(pi);
 	return 0;
 }
 
-vector<HANDLE>& LaunchThreads(int processCount, ThreadParams* params)
+vector<HANDLE> LaunchThreads(int processCount, ThreadParams* params)
 {
 	vector <HANDLE> threads(processCount);
 	
 	for (size_t i = 0; i < processCount; i++)
 	{
 		DWORD threadId;
-		HANDLE hThread = CreateThread(NULL, 0, ClientThread, params, 0, &threadId);
+		ThreadParamsInd* paramsInd = new ThreadParamsInd;
+		string pipeName = "\\\\.\\pipe\\MyPipe";
+		pipeName += to_string(i);
+		paramsInd->params = params;
+		paramsInd->pipeName = pipeName;
+		HANDLE hThread = CreateThread(NULL, 0, ClientThread, paramsInd, 0, &threadId);
 		if (hThread == NULL) 
 		{
 			DWORD err = GetLastError();
@@ -216,7 +229,7 @@ void CloseThreads(vector<HANDLE>& threads)
 	}
 }
 
-employee& Read(EmployeeLock& lock, int index, fstream& fin)
+employee Read(EmployeeLock& lock, int index, fstream& fin)
 {
 	while (true)
 	{
@@ -269,159 +282,3 @@ void Write(EmployeeLock& lock, int index, employee& emp, fstream& fout)
 	LeaveCriticalSection(&lock.cs);
 
 }
-
-
-/*#include <windows.h>
-#include <vector>
-#include <iostream>
-
-using namespace std;
-
-// ================== ДАННЫЕ ==================
-
-struct employee
-{
-    int num;
-    char name[10];
-    double hours;
-};
-
-// ================== БЛОКИРОВКА ОДНОЙ ЗАПИСИ ==================
-
-struct EmployeeLock
-{
-    CRITICAL_SECTION cs; // защита служебных данных
-    int readers;         // количество читающих потоков
-    bool writer;         // есть ли писатель
-};
-
-// ================== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ==================
-
-HANDLE hFile = INVALID_HANDLE_VALUE;
-vector<EmployeeLock> locks;
-int employeeCount = 0;
-
-// ================== ИНИЦИАЛИЗАЦИЯ ==================
-
-bool InitStorage(const wchar_t* filename, int count)
-{
-    employeeCount = count;
-
-    hFile = CreateFileW(
-        filename,
-        GENERIC_READ | GENERIC_WRITE,
-        FILE_SHARE_READ,
-        NULL,
-        OPEN_ALWAYS,
-        FILE_ATTRIBUTE_NORMAL,
-        NULL
-    );
-
-    if (hFile == INVALID_HANDLE_VALUE)
-    {
-        cout << "Failed to open file\n";
-        return false;
-    }
-
-    // инициализация блокировок
-    locks.resize(employeeCount);
-    for (int i = 0; i < employeeCount; i++)
-    {
-        InitializeCriticalSection(&locks[i].cs);
-        locks[i].readers = 0;
-        locks[i].writer = false;
-    }
-
-    return true;
-}
-
-// ================== ЧТЕНИЕ ==================
-
-bool ReadEmployee(int index, employee& emp)
-{
-    if (index < 0 || index >= employeeCount)
-        return false;
-
-    EmployeeLock& lock = locks[index];
-
-    // 1. Ждём, если кто-то пишет
-    while (true)
-    {
-        EnterCriticalSection(&lock.cs);
-        if (!lock.writer)
-        {
-            lock.readers++;
-            LeaveCriticalSection(&lock.cs);
-            break;
-        }
-        LeaveCriticalSection(&lock.cs);
-        Sleep(1);
-    }
-
-    // 2. Читаем запись
-    DWORD offset = index * sizeof(employee);
-    SetFilePointer(hFile, offset, NULL, FILE_BEGIN);
-
-    DWORD bytesRead = 0;
-    BOOL ok = ReadFile(hFile, &emp, sizeof(employee), &bytesRead, NULL);
-
-    // 3. Завершаем чтение
-    EnterCriticalSection(&lock.cs);
-    lock.readers--;
-    LeaveCriticalSection(&lock.cs);
-
-    return ok && bytesRead == sizeof(employee);
-}
-
-// ================== ЗАПИСЬ ==================
-
-bool WriteEmployee(int index, const employee& emp)
-{
-    if (index < 0 || index >= employeeCount)
-        return false;
-
-    EmployeeLock& lock = locks[index];
-
-    // 1. Ждём, пока никто не читает и не пишет
-    while (true)
-    {
-        EnterCriticalSection(&lock.cs);
-        if (!lock.writer && lock.readers == 0)
-        {
-            lock.writer = true;
-            LeaveCriticalSection(&lock.cs);
-            break;
-        }
-        LeaveCriticalSection(&lock.cs);
-        Sleep(1);
-    }
-
-    // 2. Записываем запись
-    DWORD offset = index * sizeof(employee);
-    SetFilePointer(hFile, offset, NULL, FILE_BEGIN);
-
-    DWORD bytesWritten = 0;
-    BOOL ok = WriteFile(hFile, &emp, sizeof(employee), &bytesWritten, NULL);
-
-    // 3. Завершаем запись
-    EnterCriticalSection(&lock.cs);
-    lock.writer = false;
-    LeaveCriticalSection(&lock.cs);
-
-    return ok && bytesWritten == sizeof(employee);
-}
-
-// ================== ЗАВЕРШЕНИЕ ==================
-
-void CloseStorage()
-{
-    for (auto& l : locks)
-        DeleteCriticalSection(&l.cs);
-
-    if (hFile != INVALID_HANDLE_VALUE)
-        CloseHandle(hFile);
-}
-
-
-}
-*/

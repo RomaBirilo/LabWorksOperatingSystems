@@ -34,4 +34,10 @@ int main()
 	WaitForMultipleObjects(processesCount, threads.data(), TRUE, INFINITE);
 	CloseLocks(locks);
 	CloseThreads(threads);
+	cout << "Your file:" << endl;
+	ShowFile(fileName, employeesNumber);
+	cout << "Input any key to finish programm:";   
+	char c;
+	cin >> c;
+	return 0;
 }

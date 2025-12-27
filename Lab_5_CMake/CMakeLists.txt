@@ -1,21 +1,30 @@
-﻿# CMakeList.txt: проект CMake для Lab5; включите исходный код и определения,
-# укажите здесь логику для конкретного проекта.
-#
-cmake_minimum_required (VERSION 3.8)
+﻿cmake_minimum_required(VERSION 3.16)
+project(Lab4 LANGUAGES CXX)
 
-# Включение горячей перезагрузки для компиляторов MSVC, если поддерживается.
-if (POLICY CMP0141)
-  cmake_policy(SET CMP0141 NEW)
-  set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
-endif()
+# --- Включаем C++17 ---
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-project ("Lab5")
+# --- Общие исходники в библиотеку ---
+set(COMMON_SOURCES
+    resourcesServer.h
+    resourcesServer.cpp
+    resourcesClient.h
+    resourcesClient.cpp
+)
 
-# Добавьте источник в исполняемый файл этого проекта.
-add_executable (Lab5 "Server.cpp" "Server.h" "Client.h" "Client.cpp" "resources.h" "resources.cpp")
+add_library(common STATIC ${COMMON_SOURCES})
+target_include_directories(common PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-if (CMAKE_VERSION VERSION_GREATER 3.12)
-  set_property(TARGET Lab5 PROPERTY CXX_STANDARD 20)
-endif()
+# --- Исполняемый файл Server ---
+add_executable(Server Server.cpp Server.h)
+target_link_libraries(Server PRIVATE common)
 
-# TODO: Добавьте тесты и целевые объекты, если это необходимо.
+
+# --- Исполняемый файл Client ---
+add_executable(Client Client.cpp Client.h)
+target_link_libraries(Client PRIVATE common)
+
+
+
