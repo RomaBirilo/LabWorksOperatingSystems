@@ -1,5 +1,3 @@
 ﻿#pragma once
-#include "resources.h"
+#include "resourcesServer.h"
 #include <iostream>
-#include <string>
-#include <fstream>
