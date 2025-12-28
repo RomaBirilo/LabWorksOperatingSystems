@@ -31,9 +31,16 @@ struct employee
 ostream& operator<< (ostream& out, employee& emp);
 istream& operator>> (istream& out, employee& emp);
 
+enum class OperationType : int
+{
+	READ = 1,
+	WRITE = 2,
+	END = 3
+};
+
 struct Request
 {
-	char operationType[24];
+	OperationType operationType;
 	int recordIndex;
 	employee emp;
 };
@@ -75,4 +82,5 @@ DWORD WINAPI ClientThread(LPVOID lpParam);
 vector <HANDLE> LaunchThreads(int processCount, ThreadParams* params);
 void CloseThreads(vector <HANDLE>& threads);
 employee Read(EmployeeLock& lock, int index,fstream& fin);
+employee ShowNote(int index, fstream& fin);
 void Write(EmployeeLock& lock, int index, employee& emp, fstream& fout);

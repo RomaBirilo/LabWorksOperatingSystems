@@ -130,7 +130,7 @@ DWORD __stdcall ClientThread(LPVOID lpParam)
 {
 	ThreadParamsInd* params = static_cast<ThreadParamsInd*>(lpParam);
 	ThreadParams* p = params->params;
-	string cmd = "Client.exe \"" + params->pipeName + "\"";
+	string cmd = "Client.exe \"" + params->pipeName + "\" " + to_string(p->employeesNumber);
 	char pipeName[256];
 	char command[256];
 	strcpy_s(pipeName, sizeof(pipeName), params->pipeName.c_str());
@@ -163,36 +163,46 @@ DWORD __stdcall ClientThread(LPVOID lpParam)
 
 	DWORD dwBytesRead;
 	DWORD dwBytesWritten;
-	Request request;
-	Response response;
 	fstream file(fileName, ios::in | ios::out | ios::binary);
 
 	while (true)
 	{
-		ReadFile(hNamedPipe, &request, sizeof(request), &dwBytesRead, (LPOVERLAPPED)NULL);
+		Request request{};
+		Response response{};
 
-		if (request.recordIndex < 0 || request.recordIndex >= employeesNumber)
+		ReadFile(hNamedPipe, &request, sizeof(request), &dwBytesRead, (LPOVERLAPPED)NULL);
+		
+		if (request.recordIndex < 1 || request.recordIndex > employeesNumber)
 			break;
 
-		if (request.operationType == "READ")
+		switch (request.operationType)
 		{
-			employee emp;
-			emp = Read(locks[request.recordIndex - 1], request.recordIndex - 1, file);
+		case OperationType::READ:
+		{
+			int idx = request.recordIndex - 1;
+			employee emp = Read(locks[idx], idx, file);
 
 			response.success = true;
 			response.emp = emp;
-
-			WriteFile(hNamedPipe, &response, sizeof(response), &dwBytesWritten, (LPOVERLAPPED)NULL);
-
-		}
-		else if (request.operationType == "WRITE")
-		{
-			Write(locks[request.recordIndex - 1], request.recordIndex - 1, request.emp, file);
-			response.success = true;
-		}
-		else if (request.operationType == "END")
+			WriteFile(hNamedPipe, &response, sizeof(response), &dwBytesWritten, NULL);
 			break;
+		}
+
+		case OperationType::WRITE:
+		{
+			int idx = request.recordIndex - 1;
+			Write(locks[idx], idx, request.emp, file);
+
+			response.success = true;
+			WriteFile(hNamedPipe, &response, sizeof(response), &dwBytesWritten, NULL);
+			break;
+		}
+
+		case OperationType::END:
+			return 0;
+		}
 	}
+	file.close();
 	WaitForSingleObject(pi.hProcess, INFINITE);
 	CloseProcess(pi);
 	return 0;
@@ -257,8 +267,18 @@ employee Read(EmployeeLock& lock, int index, fstream& fin)
 	return emp;
 }
 
+employee ShowNote(int index, fstream& fin)
+{
+	employee emp;
+	int offset = index * sizeof(employee);
+	fin.seekg(offset, ios::beg);
+	fin.read(reinterpret_cast<char*>(&emp), sizeof(emp));
+	return emp;
+}
+
 void Write(EmployeeLock& lock, int index, employee& emp, fstream& fout)
 {
+
 	while (true)
 	{
 		EnterCriticalSection(&lock.cs);

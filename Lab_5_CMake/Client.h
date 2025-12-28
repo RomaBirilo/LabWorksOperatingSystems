@@ -1,9 +1,2 @@
 #pragma once
 #include "resourcesClient.h"
-#include <iostream>
-#include <windows.h>
-#include <string>
-using std::cout;
-using std::cin;
-using std::endl;
-using std::string;
