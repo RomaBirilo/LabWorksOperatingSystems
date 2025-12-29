@@ -73,28 +73,47 @@ HANDLE LaunchNamedPipe(char pipeName[])
 	return hNamedPipe;
 }
 
-void CloseProcess(PROCESS_INFORMATION process)
+bool CloseNamedPipe(HANDLE& hNamedPipe)
+{
+	CloseHandle(hNamedPipe);
+	return true;
+}
+
+bool CloseProcess(PROCESS_INFORMATION& process)
 {
 	WaitForSingleObject(process.hProcess, 1000);
 	CloseHandle(process.hProcess);
 	CloseHandle(process.hThread);
+	return true;
 }
 
-void WriteFile(string fileName, int employeesNumber)
+bool InputEmployees(int employeesNumber, vector<employee>& employees)
 {
-	ofstream fout(fileName, ios::binary);
 	for (size_t i = 0; i < employeesNumber; i++)
 	{
 		cout << "Input information for employee " << i + 1 << ":" << endl;
 		employee emp;
 		cin >> emp;
-		fout.write(reinterpret_cast<char*>(&emp), sizeof(emp));
+		employees[i] = emp;
+	}
+	return true;
+}
+
+bool WriteFile(string fileName, int employeesNumber)
+{
+	vector<employee> employees(employeesNumber);
+	InputEmployees(employeesNumber, employees);
+	ofstream fout(fileName, ios::binary);
+	for (size_t i = 0; i < employeesNumber; i++)
+	{
+		fout.write(reinterpret_cast<char*>(&employees[i]), sizeof(employees[i]));
 	}
 	fout.close();
 	cout << endl;
+	return true;
 }
 
-void ShowFile(string fileName, int employeesNumber)
+bool ShowFile(string fileName, int employeesNumber)
 {
 	ifstream fin(fileName, ios::binary);
 	for (size_t i = 0; i < employeesNumber; i++)
@@ -105,6 +124,7 @@ void ShowFile(string fileName, int employeesNumber)
 		cout << emp;
 		cout << endl;
 	}
+	return true;
 }
 
 bool InitLocks(int employeesNumber, vector<EmployeeLock>& locks)
@@ -118,12 +138,13 @@ bool InitLocks(int employeesNumber, vector<EmployeeLock>& locks)
 	return true;
 }
 
-void CloseLocks(vector<EmployeeLock>& locks)
+bool CloseLocks(vector<EmployeeLock>& locks)
 {
 	for (size_t i = 0; i < locks.size(); i++)
 	{
 		DeleteCriticalSection(&locks[i].cs);
 	}
+	return true;
 }
 
 DWORD __stdcall ClientThread(LPVOID lpParam)
@@ -203,6 +224,7 @@ DWORD __stdcall ClientThread(LPVOID lpParam)
 	}
 	WaitForSingleObject(pi.hProcess, INFINITE);
 	CloseProcess(pi);
+	CloseNamedPipe(hNamedPipe);
 	return 0;
 }
 
@@ -229,12 +251,13 @@ vector<HANDLE> LaunchThreads(int processCount, ThreadParams* params)
 	return threads;
 }
 
-void CloseThreads(vector<HANDLE>& threads)
+bool CloseThreads(vector<HANDLE>& threads)
 {
 	for (size_t i = 0; i < threads.size(); i++)
 	{
 		CloseHandle(threads[i]);
 	}
+	return true;
 }
 
 employee Read(EmployeeLock& lock, int index, string& fileName)
@@ -267,7 +290,7 @@ employee Read(EmployeeLock& lock, int index, string& fileName)
 }
 
 
-void Write(EmployeeLock& lock, int index, employee& emp, string& fileName)
+bool Write(EmployeeLock& lock, int index, employee& emp, string& fileName)
 {
 
 	while (true)
@@ -292,5 +315,5 @@ void Write(EmployeeLock& lock, int index, employee& emp, string& fileName)
 	EnterCriticalSection(&lock.cs);
 	lock.writer = false;
 	LeaveCriticalSection(&lock.cs);
-
+	return true;
 }
