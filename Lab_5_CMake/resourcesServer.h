@@ -81,6 +81,5 @@ void CloseLocks(vector<EmployeeLock>& locks);
 DWORD WINAPI ClientThread(LPVOID lpParam);
 vector <HANDLE> LaunchThreads(int processCount, ThreadParams* params);
 void CloseThreads(vector <HANDLE>& threads);
-employee Read(EmployeeLock& lock, int index,fstream& fin);
-employee ShowNote(int index, fstream& fin);
-void Write(EmployeeLock& lock, int index, employee& emp, fstream& fout);
+employee Read(EmployeeLock& lock, int index, string& fileName);
+void Write(EmployeeLock& lock, int index, employee& emp, string& fileName);

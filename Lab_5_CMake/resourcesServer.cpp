@@ -163,8 +163,7 @@ DWORD __stdcall ClientThread(LPVOID lpParam)
 
 	DWORD dwBytesRead;
 	DWORD dwBytesWritten;
-	fstream file(fileName, ios::in | ios::out | ios::binary);
-
+	
 	while (true)
 	{
 		Request request{};
@@ -180,7 +179,7 @@ DWORD __stdcall ClientThread(LPVOID lpParam)
 		case OperationType::READ:
 		{
 			int idx = request.recordIndex - 1;
-			employee emp = Read(locks[idx], idx, file);
+			employee emp = Read(locks[idx], idx, fileName);
 
 			response.success = true;
 			response.emp = emp;
@@ -191,7 +190,7 @@ DWORD __stdcall ClientThread(LPVOID lpParam)
 		case OperationType::WRITE:
 		{
 			int idx = request.recordIndex - 1;
-			Write(locks[idx], idx, request.emp, file);
+			Write(locks[idx], idx, request.emp, fileName);
 
 			response.success = true;
 			WriteFile(hNamedPipe, &response, sizeof(response), &dwBytesWritten, NULL);
@@ -202,7 +201,6 @@ DWORD __stdcall ClientThread(LPVOID lpParam)
 			return 0;
 		}
 	}
-	file.close();
 	WaitForSingleObject(pi.hProcess, INFINITE);
 	CloseProcess(pi);
 	return 0;
@@ -239,7 +237,7 @@ void CloseThreads(vector<HANDLE>& threads)
 	}
 }
 
-employee Read(EmployeeLock& lock, int index, fstream& fin)
+employee Read(EmployeeLock& lock, int index, string& fileName)
 {
 	while (true)
 	{
@@ -254,11 +252,12 @@ employee Read(EmployeeLock& lock, int index, fstream& fin)
 		Sleep(1);
 	}
 
+	fstream fin(fileName, ios::in | ios::binary);
 	employee emp;
 	int offset = index * sizeof(employee);
 	fin.seekg(offset, ios::beg);
 	fin.read(reinterpret_cast<char*>(&emp), sizeof(emp));
-
+	fin.close();
 
 	EnterCriticalSection(&lock.cs);
 	lock.readers--;
@@ -267,16 +266,8 @@ employee Read(EmployeeLock& lock, int index, fstream& fin)
 	return emp;
 }
 
-employee ShowNote(int index, fstream& fin)
-{
-	employee emp;
-	int offset = index * sizeof(employee);
-	fin.seekg(offset, ios::beg);
-	fin.read(reinterpret_cast<char*>(&emp), sizeof(emp));
-	return emp;
-}
 
-void Write(EmployeeLock& lock, int index, employee& emp, fstream& fout)
+void Write(EmployeeLock& lock, int index, employee& emp, string& fileName)
 {
 
 	while (true)
@@ -292,10 +283,11 @@ void Write(EmployeeLock& lock, int index, employee& emp, fstream& fout)
 		Sleep(1);
 	}
 
-	
+	fstream fout(fileName, ios::out | ios::binary);
 	int offset = index * sizeof(employee);
 	fout.seekp(offset, ios::beg);
 	fout.write(reinterpret_cast<char*>(&emp), sizeof(emp));
+	fout.close();
 
 	EnterCriticalSection(&lock.cs);
 	lock.writer = false;

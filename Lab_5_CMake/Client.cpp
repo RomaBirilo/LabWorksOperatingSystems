@@ -92,6 +92,7 @@ int main(int argc, char* argv[])
 
 			WriteFile(hNamedPipe, &request, sizeof(request), &dwBytesWritten, (LPOVERLAPPED)NULL);
 			ReadFile(hNamedPipe, &response, sizeof(response), &dwBytesRead, (LPOVERLAPPED)NULL);
+			cout << endl;
 
 		}
 		else if (n == 2)
@@ -117,6 +118,7 @@ int main(int argc, char* argv[])
 
 			cout << "Note from file:" << endl;
 			cout << response.emp;
+			cout << endl;
 		}
 		else if (n == 3)
 		{
