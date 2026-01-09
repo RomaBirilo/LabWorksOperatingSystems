@@ -1,5 +1,6 @@
 from django.db import models
 
+
 class Task(models.Model):
     STATUS_TODO = 'todo'
     STATUS_IN_PROGRESS = 'in_progress'
@@ -10,6 +11,7 @@ class Task(models.Model):
         (STATUS_IN_PROGRESS,'In Progress'),
         (STATUS_DONE,'Done')
     ]
+
 
     title = models.CharField(
         max_length = 20,

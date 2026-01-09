@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Список задач</title>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #1e1f26;
+            color: #e0e0e0;
+            margin: 0;
+            padding: 40px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2em;
+            color: #f0f0f0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background-color: #2a2b38;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.4);
+        }
+
+        th, td {
+            padding: 16px 20px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #3a3b4a;
+            color: #cfcfcf;
+            text-transform: uppercase;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+        }
+
+        tr:nth-child(even) {
+            background-color: #2f303f;
+        }
+
+        tr:hover {
+            background-color: #404158;
+            transition: background-color 0.3s;
+        }
+
+        .status-todo { background-color: #ffb74d; color: #1e1f26; font-weight: 600; padding: 6px 14px; border-radius: 20px; display: inline-block; margin-top: 12px; }
+        .status-in_progress { background-color: #64b5f6; color: #1e1f26; font-weight: 600; padding: 6px 14px; border-radius: 20px; display: inline-block; margin-top: 12px; }
+        .status-done { background-color: #81c784; color: #1e1f26; font-weight: 600; padding: 6px 14px; border-radius: 20px; display: inline-block; margin-top: 12px; }
+
+        .actions {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .actions a {
+            background-color: #81c784;
+            color: #1e1f26;
+            font-weight: 600;
+            text-decoration: none;
+            padding: 12px 0;
+            border-radius: 10px;
+            text-align: center;
+            flex: 1; /* растягиваем равномерно по ширине */
+            transition: background-color 0.3s;
+        }
+
+        .actions a:hover {
+            background-color: #6fbf6f;
+        }
+
+        @media (max-width: 768px) {
+            th, td { padding: 12px 10px; }
+            .actions { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <h1>Список задач</h1>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Название</th>
+                <th>Описание</th>
+                <th>Статус</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for task in tasks %}
+            <tr>
+                <td>{{ task.id }}</td>
+                <td>{{ task.title }}</td>
+                <td>{{ task.description }}</td>
+                <td>
+                    {% if task.status == "todo" %}
+                        <span class="status-todo">To Do</span>
+                    {% elif task.status == "in_progress" %}
+                        <span class="status-in_progress">In Progress</span>
+                    {% elif task.status == "done" %}
+                        <span class="status-done">Done</span>
+                    {% else %}
+                        <span>{{ task.status }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" style="text-align:center;">Задач пока нет</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
